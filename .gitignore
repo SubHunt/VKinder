@@ -1,4 +1,4 @@
-/.git
-/.idea
-/venv
-/data
+.git/
+.idea/
+venv/
+data/
