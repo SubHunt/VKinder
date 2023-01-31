@@ -35,7 +35,8 @@ if __name__ == "__main__":
     # start()
     # vk = vk_access.VK(access_token, user_id1)
     vk = vk_access.VK(access_token, user_id1)
-    vk.users_info_2(session_api)
+    us_info = vk.users_info_2(session_api)
+    vk.photos_info(us_info)
 
     # users = session_api.users.search(sex=2, birth_year=1981, count=1000, field='domain', from_group=1)
     # print(users)
