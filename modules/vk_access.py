@@ -1,6 +1,6 @@
 import requests
 from random import randrange
-from .keyboards import kb_main_menu
+from .keyboards import kb_main_menu, kb_profile
 import time
 from pprint import pprint
 
@@ -41,23 +41,25 @@ class VK:
         users = session_api.users.search(sex=user_data['sex'], city=user_data['city'], birth_year=user_data['byear'], count=1000, field='domain')
 
         """Возможно, этот блок нужно перенести в отдельную функцию или передавать/возвращать список пользователей"""
-        id_list = []
-        for user in users['items']:
-            """Просмотр всех пользователей в сокращенном формате"""
-        #     print(user['id'], user['first_name'], user['last_name'])
-            """Добавляем id всех найденных пользователей в список, для дальнейшего перемещения влево-вправо стрелками по индексам"""
-            id_list.append(user['id'])
-        return id_list
+        return users
+        # id_list = []
+        # for user in users['items']:
+        #     """Просмотр всех пользователей в сокращенном формате"""
+        # #     print(user['id'], user['first_name'], user['last_name'])
+        #     """Добавляем id всех найденных пользователей в список, для дальнейшего перемещения влево-вправо стрелками по индексам"""
+        #     id_list.append(user['id'])
+        # pprint(id_list)
+        # return id_list
 
 
-    def photos_info(self, id_list):
+    def photos_info(self, user):
         """Цикл по всем найденным профилям. Перебираем фотографии профилей"""
-        for user in id_list:
-            print('---------------------new user---------------------------------------------')
-            """Здесь находятся все фото каждого профиля"""
-            """Профиль может быть закрыт, чтобы избежать ошибку, делаем обход через блок try"""
+        print('---------------------new user---------------------------------------------')
+        """Здесь находятся все фото каждого профиля"""
+        """Профиль может быть закрыт, чтобы избежать ошибку, делаем обход через блок try"""
+        while True:
             try:
-                items = self.photos_get(user)['response']['items']
+                items = self.photos_get(user['id'])['response']['items']
                 photos_info = []
                 """Здесь по очереди перебираются все фото во всех доступных размерах"""
                 for item in items:
@@ -74,10 +76,15 @@ class VK:
                 sort_photos_likes = sorted(photos_info, key=lambda d: d['likes'], reverse=True)
                 """Нам нужно только первые 3 фото с наибольшими лайками, остальные не берем"""
                 photo_best_3 = sort_photos_likes[:3]
-                pprint(photo_best_3)
+                user['first_photo'] = photo_best_3[0]
+                user['second_photo'] = photo_best_3[1]
+                user['third_photo'] = photo_best_3[2]
                 """Если профиль закрыт или получаем какую-то ошибку, переходим к следующему профилю"""
             except:
-                continue
+                print('Не подходит, не забираем')
+                return None
+            return user
+
 
     def photos_get(self, user):
         """Функция заходит к пользователю из списка и забирает с его профиля все фотографии
@@ -95,7 +102,7 @@ class VK:
         response = requests.get(photos_url, params).json()
         """С задержкой надо поэскпериментировать, 
         если убрать, то сервер блокирует выдачу собщением слишком много запросов"""
-        time.sleep(2)
+        # time.sleep(1)
         return response
 
 
@@ -118,8 +125,12 @@ class BotEvents:
                                 message=message, random_id=random_id,
                                 keyboard=kb_main_menu.get_keyboard())
 
-    def fast_search(self):
-        pass
+    def fast_search(self, api_token, message, random_id=randrange(10 ** 7)):
+        """Отправляем клавиатуру"""
+        api_token.messages.send(user_id=self.user_id,
+                                message=message, random_id=random_id,
+                                keyboard=kb_profile.get_keyboard())
+        self.write_msg(message)
 
     def next_user(self):
         pass
@@ -128,4 +139,18 @@ class BotEvents:
         pass
 
     def back(self):
+        pass
+
+    def save_favorites(self):
+        """Здесь реализация добавления человека в избранные"""
+        pass
+
+    def show_favorites(self):
+        """Здесь просмотр/пролистывание людей взятых исключительно из БД 'Избранные' """
+        pass
+
+    def black_list(self):
+        """ДОПОЛНИТЕЛЬНОЕ ЗАДАНИЕ!!!
+            Добавление человека в черный список, по сути добавление его в БД с черным списком, чтобы информация по нему
+            не выводилась при пролистывании"""
         pass

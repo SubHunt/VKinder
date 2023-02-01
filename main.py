@@ -1,3 +1,5 @@
+import time
+from pprint import pprint
 from modules import vk_access
 import configparser
 import vk_api
@@ -7,23 +9,33 @@ config.read("config.ini")
 access_token = config['Tokens']['vk_token']
 user_id1 = config['Tokens']['user_id']
 group_token = config['Tokens']['group_token']
-vk = vk_api.VkApi(token=group_token)
-api_token = vk.get_api()
-long_poll = VkLongPoll(vk)
-vk1 = vk_api.VkApi(token=access_token)
-session_api = vk1.get_api()
+vk_group = vk_api.VkApi(token=group_token)
+api_token = vk_group.get_api()
+long_poll = VkLongPoll(vk_group)
+vk_user = vk_api.VkApi(token=access_token)
+session_api = vk_user.get_api()
 
 
-def start():
+def start(vk2, users_list):
     """Принимает сообщения/команды от пользователя и вызывает соответствующие функции"""
+    i = 0
     for event in long_poll.listen():
         if event.type == VkEventType.MESSAGE_NEW:
-            vk_user = vk_access.BotEvents(vk, event.user_id) # Создаем экземпляр класса для обработки сообщений
+            vk_user = vk_access.BotEvents(vk_group, event.user_id) # Создаем экземпляр класса для обработки сообщений
             if event.to_me:
                 request = event.text
-                if request == "1":
+                if request == "Привет":
                     vk_user.write_msg(f"Хай, {event.user_id}")
                     vk_user.keyboard_main_menu(api_token, 'Какие планы на сегодня?')
+                elif request == 'Найти людей':
+                    res = vk2.photos_info(users_list['items'][i])
+                    vk_user.fast_search(api_token, f"{res['first_name']} {res['last_name']}\nПрофиль: https://vk.com/id{res['id']}\nФото:\n1 {res['first_photo']['link']}\n2 {res['second_photo']['link']}\n3 {res['third_photo']['link']}")
+                elif request == 'Следующий':
+                    res = vk2.photos_info(users_list['items'][i+1])
+                    vk_user.fast_search(api_token, f"{res['first_name']} {res['last_name']}\nПрофиль: https://vk.com/id{res['id']}\nФото:\n1 {res['first_photo']['link']}\n2 {res['second_photo']['link']}\n3 {res['third_photo']['link']}")
+                elif request == 'Предыдущий':
+                    res = vk2.photos_info(users_list['items'][i-1])
+                    vk_user.fast_search(api_token, f"{res['first_name']} {res['last_name']}\nПрофиль: https://vk.com/id{res['id']}\nФото:\n1 {res['first_photo']['link']}\n2 {res['second_photo']['link']}\n3 {res['third_photo']['link']}")
                 elif request == "пока" or request == "Выход":
                     vk_user.write_msg("До новых встреч)")
                     exit()
@@ -32,14 +44,8 @@ def start():
 
 
 if __name__ == "__main__":
-    # start()
-    # vk = vk_access.VK(access_token, user_id1)
-    vk = vk_access.VK(access_token, user_id1)
-    us_info = vk.users_info_2(session_api)
-    vk.photos_info(us_info)
+    vk2 = vk_access.VK(access_token, user_id1)
+    users_list = vk2.users_info_2(session_api)
+    start(vk2, users_list)
 
-    # users = session_api.users.search(sex=2, birth_year=1981, count=1000, field='domain', from_group=1)
-    # print(users)
-    # print(build_url())
-    # print(vk.users_info_2())
 
